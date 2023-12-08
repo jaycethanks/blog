@@ -1,0 +1,100 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AboutDTO {
+  avatar: String
+  links: String
+  msg: String
+}
+
+"""用于归档每个年份下加载更多按钮."""
+input ArchieveAppendInput {
+  size: Int!
+  start: Int!
+  year: String!
+}
+
+"""接口最终返回的 归档数据结构"""
+type ArchieveDto {
+  posts: [ArticleDto!]!
+  year: String!
+}
+
+"""接口最终返回的 文章结构"""
+type ArticleDto {
+  artid: String!
+  banner: Boolean
+  category: CategoryDto
+  catid: String
+  column: ColumnDto
+  content: String
+  cover: String
+  createdAt: DateTime!
+  description: String
+  password: String
+  status: Int
+  tags: [TagDto!]
+  title: String!
+  visible: Boolean
+}
+
+"""分类"""
+type CategoryDto {
+  catid: String
+  description: String
+  name: String
+  relateCount: Int
+}
+
+"""Coffee module"""
+type Coffee {
+  brand: String!
+  flavors: [String!]!
+
+  """A unique identifier"""
+  id: ID!
+  name: String!
+}
+
+"""专栏"""
+type ColumnDto {
+  colid: String
+  name: String
+}
+
+"""Create coffee input object type."""
+input CreateCoffeeInput {
+  brand: String!
+  flavors: [String!]!
+
+  """A new coffee name"""
+  name: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Mutation {
+  createCoffee(createCoffeeInput: CreateCoffeeInput!): Coffee
+}
+
+type Query {
+  about: AboutDTO
+  archieves(perMaxSize: Int!): [ArchieveDto!]
+  article(artid: String!): ArticleDto
+  categories: [CategoryDto!]
+  coffee(id: ID!): Coffee!
+  coffees: [Coffee!]!
+  postsList(catid: String!): [ArticleDto!]
+  queryMore(pageInfo: ArchieveAppendInput!): [ArticleDto!]
+  recentPosts: [ArticleDto!]
+}
+
+"""标签"""
+type TagDto {
+  name: String
+  tagid: String
+}

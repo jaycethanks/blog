@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  nginx:
+    container_name: 'nginx'
+    build: ./docker/nginx/
+    ports:
+      - '8988:8989'
+    volumes:
+      - /usr/local/blog-assets:/usr/local/blog-assets
+    networks:
+      - app-net
+
+  db:
+    container_name: 'db'
+    image: mysql
+    ports:
+      - '3396:3306'
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    volumes:
+      - /home/jayce/softwares/docker/mysql8/log:/var/log/mysql
+      - /home/jayce/softwares/docker/mysql8/data:/var/lib/mysql
+      - /home/jayce/softwares/docker/mysql8/conf:/etc/mysql/conf
+      - /home/jayce/softwares/docker/mysql8/mysql-files:/var/lib/mysql-files
+    networks:
+      - app-net
+
+  nestjs-app:
+    container_name: 'nestjs-app'
+    build: .
+    ports:
+      - '4566:4567'
+    environment:
+      - DATABASE_URL=mysql://root:123456@db:3306/zhongyi_blog_prisma
+    volumes:
+      - /usr/local/blog-assets/:/usr/local/blog-assets/
+    depends_on:
+      - db
+    networks:
+      - app-net
+  # zhongyi-blog:
+  #   build:
+  #     context: https://github.com/jaycethanks/zhongyi-blog.git#main
+  #     dockerfile: Dockerfile
+  #     args:
+  #       - NEXT_PUBLIC_USERID=1d58a529-51d8-475d-b923-e8d35471624b
+  #       - NEXT_PUBLIC_GRAPHQL_API_URL=http://nestjs-app:4567/graphql
+  #       - NEXT_PUBLIC_NGINX_SERVER=http://nginx:8989
+
+  #   environment:
+  #     - NEXT_PUBLIC_USERID=1d58a529-51d8-475d-b923-e8d35471624b
+  #     - NEXT_PUBLIC_GRAPHQL_API_URL=http://nestjs-app:4567/graphql
+  #     - NEXT_PUBLIC_NGINX_SERVER=http://nginx:8989
+  #   depends_on:
+  #     - db
+  #     - nginx
+  #     - nestjs-app
+  #   networks:
+  #     app-net
+
+networks:
+  app-net:
+    driver: bridge

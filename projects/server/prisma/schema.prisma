@@ -1,0 +1,205 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 黑名单
+model BlackList {
+  id      String  @id @default(uuid())
+  ip      String?
+  email   String?
+  keyword String?
+
+  @@map("t_blacklist")
+}
+
+model User {
+  userid    String     @id @default(uuid())
+  name      String
+  nickname  String?
+  phone     String     @unique
+  email     String     @unique
+  password  String
+  avatar    String?
+  articles  Article[]
+  categorys Category[]
+  columns   Column[]
+  tags      Tag[]
+  About     About[]
+
+  @@map("t_user")
+}
+
+model Article {
+  artid    String @id @default(uuid())
+  sort     Int    @default(0)
+  author   User   @relation(fields: [authorId], references: [userid])
+  authorId String @map("author_id")
+
+  title       String  @db.LongText
+  description String? @db.LongText
+  content     String  @db.LongText
+
+  keywords String @default("")
+  status   Int    @default(0) //0: 草稿 1:发布 3：删除
+
+  cover    String    @default("")
+  visible  Int       @default(1) // 0: 不可见 1:可见
+  password String? // 加密文章
+  comments Comment[]
+
+  allowComment Int       @default(1) @map("allow_comment") // 1: 允许评论 0: 禁止评论
+  liking       Int       @default(0)
+  readers      Int       @default(0)
+  banner       Int       @default(0) //0: 不在 banner 区域展示， 1 banner 区域的顺序
+  category     Category? @relation(fields: [catid], references: [catid]) // 分类关联
+  catid        String?
+  column       Column?   @relation(fields: [colid], references: [colid]) // 专栏关联
+  colid        String?
+
+  tags TagsOnArticles[] // 标签关联
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("t_articles")
+}
+
+// 文章和 Tag 是 many-to-many 的关系，一篇文章可以有多个tag, 一个tag 也可以存在于多篇文章，
+model Tag {
+  tagid       String           @id @default(uuid())
+  name        String           @unique
+  visible     Int              @default(1)
+  relateCount Int?             @default(0) @map("relate_count")
+  articles    TagsOnArticles[]
+  User        User             @relation(fields: [userid], references: [userid])
+  userid      String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("t_tag")
+}
+
+model TagsOnArticles {
+  // fields ：TagsOnArticles.artid reference:Article.artid
+  article Article @relation(fields: [artid], references: [artid])
+  artid   String
+  tag     Tag     @relation(fields: [tagid], references: [tagid])
+  tagid   String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@id([artid, tagid])
+  @@map("tags_on_articles")
+}
+
+// 文章和 Comment 是 one-to-many 的关系， 一个文章有多个评论，但是某条评论仅关联至一篇文章
+model Comment {
+  comid    String  @id @default(uuid())
+  content  String  @db.TinyText
+  nickname String?
+  avatar   String?
+  email    String?
+  url      String?
+  ip       String?
+  agent    String?
+  city     String?
+  province String?
+
+  sort   Int @default(0)
+  liking Int @default(0)
+  status Int @default(1) //0:隐藏 1:展示
+
+  article            Article @relation(fields: [articleId], references: [artid])
+  articleId          String  @map("article_id")
+  articleTitle       String? @map("article_title")
+  articleDescription String? @map("article_description")
+
+  parent         String?
+  parentId       String? @map("parent_id")
+  parentNickname String? @map("parent_nickname")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("t_comment")
+}
+
+// 文章和 Category 是 one-tp-many 的关系，一篇文章只能有有个分类，但是一个分类可以包含多篇文章
+model Category {
+  catid       String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  sort        Int?      @default(0)
+  relateCount Int?      @default(0) @map("relate_count")
+  articles    Article[]
+  user        User      @relation(fields: [userid], references: [userid])
+  userid      String
+  visible     Int       @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("t_category")
+}
+
+// 文章和 Column 是 one-tp-many 的关系，一篇文章只能有一个专栏，但是一个专栏可以包含多篇文章
+model Column {
+  colid       String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  cover       String?
+  visible     Int       @default(1)
+  relateCount Int?      @default(0) @map("relate_count")
+  articles    Article[]
+  user        User      @relation(fields: [userid], references: [userid])
+  userid      String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("t_column")
+}
+
+model About {
+  id        String   @id @default(uuid())
+  msg       String   @db.LongText
+  links     String?  @db.LongText
+  user      User     @relation(fields: [userid], references: [userid])
+  userid    String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("t_about")
+}
+
+// ! deplicated 多对多
+// model CategoriesOnArticles {
+//   article  Article  @relation(fields: [artid], references: [artid])
+//   artid    String
+//   category Category @relation(fields: [catid], references: [catid])
+//   catid    String
+
+//   @@id([artid, catid])
+//   @@map("categories_on_articles")
+// }
+
+// ! deplicated 多对多
+// model ColumnsOnArticles {
+//   article Article @relation(fields: [artid], references: [artid])
+//   artid   String
+//   column  Column  @relation(fields: [colid], references: [colid])
+//   colid   String
+
+//   @@id([artid, colid])
+//   @@map("columns_on_articles")
+// }
